@@ -37,7 +37,7 @@ random = _random.WichmannHill()
 # edit and die. if you want to help with this script, open a PR on github.
 ScriptName = "IF parameters"
 Website = None
-Version = "2.0.0"
+Version = "2.0.2"
 Creator = "TMHK"
 Description = "allows for $if parameters"
 Parent = None
@@ -210,7 +210,6 @@ def Parse(msg, userid, username, targetid, targetname, message):
                 continue
             if i['name'] == "if":
                 ret += parseif(i, userid, username, targetid, targetname)
-    
         return ret
     except ParsingError as e:
         return e.message
@@ -261,14 +260,13 @@ def parse_modes(var, mode, compare):
     if mode in ['notin', '!*']:
         return var not in compare
     if mode in ['permission', "haspermission"]:
-        return Parent.HasPermission(var, Parent.GetDisplayName(var), compare)
+        return Parent.HasPermission(var, compare, "")
 
 def parseif(args, user, username, targetuser, targetname):
     ret = ""
     try:
         var, mode, compare, true_msg, false_msg = args['params']
     except:
-        raise
         return "Not enough values passed to $if"
     tf = parse_modes(var, mode, compare)
     called_msg = true_msg if tf else false_msg
@@ -288,7 +286,7 @@ def parseif(args, user, username, targetuser, targetname):
             continue
         if i['name'] == "if":
             ret += parseif(i, user, username, targetuser, targetname)
-        if i['name'] in ["pointsadd", "pointsremove"]:
+        if i['name'] in ["add", "remove"]:
             ret += parse_currency(i)
         if i['name'] == "getapi":
             response = json.loads(i['params'][0])
@@ -315,12 +313,12 @@ def parse_currency(arg):
     except: pass
     amount = intconverter(amount)
 
-    if arg['name'] == "pointsadd":
+    if arg['name'] == "add":
         if Parent.AddPoints(userid, Parent.GetDisplayName(userid), amount):
             return success
         return failed
 
-    elif arg['name'] == "pointsremove":
+    elif arg['name'] == "remove":
         if Parent.RemovePoints(userid, Parent.GetDisplayName(userid), amount):
             return success
         return failed

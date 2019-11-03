@@ -1,7 +1,13 @@
 IF parameters by IAmTomahawkx
-version 2.0.0
+version 2.0.2
 
 changelog:
+2.0.2:
+    - fixed haspermission not working
+2.0.1:
+    - fixed some bugs
+    - $pointsadd is now just $add
+    - $pointsremove is now just $remove
 2.0.0:
     rewrite is here! forget everything you used to know about the $if script, its a whole new script!
     - all parameters now use normal brackets "()", and use a comma "," as a delimiter. if you want use these in your arguments,
@@ -100,8 +106,8 @@ other parameters
     the following are parameters (including obs/slobs) that can go inside the true-msg and false-msg, and will be run with if.
     $setvar (see above)
     $if (yes, they can go inside other ifs)
-    $pointsadd(userid,amount) OR $pointsadd(userid,amount,succeed,fail)
-    $pointsremove(userid,amount) OR $pointsremove(userid,amount,succeed,fail)
+    $add(userid,amount) OR $add(userid,amount,succeed,fail) - adds points to the target user
+    $remove(userid,amount) OR $remove(userid,amount,succeed,fail) - removes points from the user
     $getapi(url)
     $write(filepath,content) OR $write(filepath,content,succeed,fail)
     $mathif(equation)
