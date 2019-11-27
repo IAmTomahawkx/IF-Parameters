@@ -1,0 +1,10 @@
+{
+  "btnreadme": {
+    "type": "button",
+    "label": "open readme",
+    "tooltip": "read this!",
+    "wsevent": "",
+    "function": "openreadme",
+    "group": ""
+  }
+}
