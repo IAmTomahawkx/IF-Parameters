@@ -108,7 +108,8 @@ def openreadme():
     """
     the button in the UI_Config.json file leads to this function. all it does it open the readme.
     """
-    os.startfile(os.path.join(os.path.dirname(__file__), "readme.txt"))
+    import webbrowser
+    webbrowser.open("https://github.com/IAmTomahawkx/IF-Parameters/blob/master/README.md")
 
 def Execute(data):
     """
