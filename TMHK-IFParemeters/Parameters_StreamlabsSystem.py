@@ -283,7 +283,8 @@ _modes = {
     (">=", "geq"): lambda var, comp: intconverter(var) >= intconverter(comp),
     ("in", "=*"): lambda var, comp: var in comp,
     ("notin", "!*"): lambda var, comp: var not in comp,
-    ("permission", "has_permission"): lambda var, comp: Parent.HasPermission(var.lower(), comp, "")
+    ("permission", "has_permission"): lambda var, comp: Parent.HasPermission(var.lower(), comp, ""),
+    ("indir",): lambda var, comp: var in os.listdir(comp) if os.path.isdir(comp) else False
 }
 
 def parse_modes(var, mode, compare):
