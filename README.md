@@ -18,6 +18,8 @@ readme online, as you can tell, and done a few other things.
 - Fixed geq `>=` and seq `<=` being treated backwards (thanks to lance lake for pointing this out)
 - Added a new comparison, `indir`, which will allow you to check if a file exists in a certain directory
 - Fixed backslashes (`\`) being displayed when used to escape commas
+- Added $balance() inside the if response
+
 ___
 Heads up when reading this readme!
 Square brackets inside a parameter mark optional arguments. Ex. `$OBSSwapScene(scene[,delay])`. Do not actually write the brackets!
@@ -85,26 +87,27 @@ haspermission - returns true if the comparee (which must be $userid or equivalen
 
 ## Other Parameters
 the following are parameters (including obs/slobs) that can go inside the true-msg and false-msg, and will be run with if. \
-$setvar (see above) \
-$if (yes, they can go inside other ifs)\
-$add(userid,amount) OR $add(userid,amount,succeed,fail) - adds points to the target user\
-$remove(userid,amount) OR $remove(userid,amount,succeed,fail) - removes points from the user\
-$getapi(url)\
-$write(filepath,content) OR $write(filepath,content,succeed,fail)\
-$mathif(equation)
+- $setvar (see above) \
+- $if (yes, they can go inside other ifs)\
+- $add(userid,amount) OR $add(userid,amount,succeed,fail) - adds points to the target user\
+- $remove(userid,amount) OR $remove(userid,amount,succeed,fail) - removes points from the user\
+- $getapi(url)\
+- $write(filepath,content) OR $write(filepath,content,succeed,fail)\
+- $mathif(equation)
+- $balance(user) - returns info on the specified user
 
 ## OBS & SLOBS parameters
-$OBSSwapScene(scene[,delay])\
-$OBSSwapBackScene(scene1,scene2,delay)\
-$OBSSourceVisibility(source,on/off[,scene])\
-$OBSTimedSourceVisibility(source,onoff/offon,delay[,scene])
+- $OBSSwapScene(scene[,delay])\
+- $OBSSwapBackScene(scene1,scene2,delay)\
+- $OBSSourceVisibility(source,on/off[,scene])\
+- $OBSTimedSourceVisibility(source,onoff/offon,delay[,scene])
 
-$SLOBSSwapScene(scene[,delay])\
-$SLOBSSwapBackScene(scene,delay[,returnscene])\
-$SLOBSSourceVisibility(source,on/off[,scene])\
-$SLOBSTimedSourceVisibility(source,onoff/offon,delay[,scene])\
-$SLOBSFolderVisibility(folder,on/off[,scene])\
-$SLOBSTimedFolderVisibility(folder,on/off,delay[,scene])
+- $SLOBSSwapScene(scene[,delay])\
+- $SLOBSSwapBackScene(scene,delay[,returnscene])\
+- $SLOBSSourceVisibility(source,on/off[,scene])\
+- $SLOBSTimedSourceVisibility(source,onoff/offon,delay[,scene])\
+- $SLOBSFolderVisibility(folder,on/off[,scene])\
+- $SLOBSTimedFolderVisibility(folder,on/off,delay[,scene])
 
 ___
 ## Contact

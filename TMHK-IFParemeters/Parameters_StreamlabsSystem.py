@@ -336,10 +336,20 @@ def parseif(args, user, username, targetuser, targetname):
 
         if i['name'] == "write":
             ret += writefile(i)
+
         if i['name'] == "mathif":
             ret += parsemath(i)
 
+        if i['name'] == "balance":
+            ret += parse_balance(i)
+
     return ret.strip()
+
+def parse_balance(arg):
+    if len(arg['params']) != 1:
+        return "{{$balance takes 1 argument, not {0}}}".format(len(arg['params']))
+
+    return str(Parent.GetPoints(arg['params'][0]))
 
 def parse_currency(arg):
     success, failed = "", ""
