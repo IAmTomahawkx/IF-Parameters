@@ -37,7 +37,7 @@ random = _random.WichmannHill()
 # edit and die. if you want to help with this script, open a PR on github.
 ScriptName = "IF parameters"
 Website = None
-Version = "2.0.2"
+Version = "2.1.0"
 Creator = "TMHK"
 Description = "allows for $if parameters"
 
