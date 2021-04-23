@@ -40,6 +40,7 @@ Website = None
 Version = "2.0.2"
 Creator = "TMHK"
 Description = "allows for $if parameters"
+
 Parent = None
 filedata = os.path.join(os.path.dirname(__file__), "cache")
 varfile = os.path.join(filedata, "vars.json")
@@ -59,6 +60,7 @@ def send_message(message, data=None):
         message = message.replace("$user", data.UserName)
         for i in range(1, data.GetParamCount()-1):
             message = message.replace("$arg"+str(i), data.GetParam(i))
+
     if data:
         if data.IsFromDiscord():
             Parent.SendDiscordMessage(message)
@@ -83,14 +85,18 @@ def Init():
     global variables
     global controller
     controller = scenecontrol.Broadcastcontrol(Parent) # set our OBS/SLOBS remote here
+
     if not os.path.exists(filedata): # create the directories to the cache, if they dont exist.
         os.makedirs(filedata)
+
     if not os.path.exists(varfile): # create the cache file itself, if it doesnt exist.
         f = open(varfile, "w")
         json.dump({'vars': {}}, f)
         f.close()
+
     with open(varfile) as f:
         e = f.read()
+
     try:
         v = json.loads(e)
         variables = v['vars']
@@ -110,11 +116,13 @@ def Execute(data):
     """
     if not data.IsChatMessage():
         return
+
     if data.GetParam(0) == "!setvar" and Parent.HasPermission(data.User, "Editor", ""):
         varname = data.GetParam(1).lower()
         varvalue = " ".join(data.Message.split(" ")[2:])
         variables[varname] = varvalue
         send_message("$user, updated \"{}\" to '{}'".format(varname, varvalue), data=data)
+
     if data.GetParam(0) == "!getvar" and Parent.HasPermission(data.User, "Editor:"):
         varname = data.GetParam(1).lower()
         if varname in variables:
@@ -138,53 +146,68 @@ def Unload():
 def readfile(filepath, randline=False):
     if not os.path.isfile(filepath):
         return "Error: Not a file"
+
     with open(filepath) as f:
         content = f.read()
+
     if randline:
         content = content.strip().split("\n")
         return random.choice(content)
+
     return content.replace("\n", "  ")
 
 def writefile(arg):
     if len(arg['params']) < 2 or len(arg['params']) > 4:
         return "{{write takes a minimum of 2 argument, and a maximum of 4, not {0}}}".format(len(arg['params']))
+
     print(arg['params'][2:4])
     fp, data = arg['params'][0:2]
     suc, fail = "", ""
     try:
         suc, fail = arg['params'][2:4]
-    except: pass
+    except:
+        pass
+
     if not os.path.isfile(fp):
         return "{writing error: File not found. does it exist?}"
+
     try:
         with codecs.open(fp, encoding="utf-8", mode="w") as f:
             f.write(data)
     except:
         return fail
+
     return suc
 
 def parse_variables(i):
     if i['name'] == "setvar":
         variables[i['params'][0].lower()] = i['params'][1]
         return "", True
+
     if i['name'] in ["varPE", "varME"]:
         try:
             v = intconverter(variables[i['params'][0].lower()])
         except ParsingError:
             return "{{cannot use varPE on non-integer variable {0}}}".format(i['params'][0]), True
+
         except KeyError:
             v = 0
+
         try:
             r = intconverter(i['params'][1])
         except ParsingError as e:
             return e.message, True
+
         except IndexError:
             return "{{{0} takes 2 arguments, got 1}}".format(i['name']), True
+
         if i['name'] == "varPE":
             variables[i['params'][0].lower()] = str(int(round(v + r)))
         else:
             variables[i['params'][0].lower()] = str(int(round(v - r)))
+
         return "", True
+
     return "", False
 
 def Parse(msg, userid, username, targetid, targetname, message):
@@ -193,32 +216,40 @@ def Parse(msg, userid, username, targetid, targetname, message):
         msg = parse_arg_parameters(msg, message)
         if msg.strip() == "":
             return msg
+
         for i in variables:
             msg = msg.replace("<{}>".format(i), variables[i])
+
         if "$" not in msg:
             return msg
+
         args = argparser.parse(msg, 1)
         for i in args:
             if not isinstance(i, dict):
                 ret += i
                 continue
+
             a,b = parse_variables(i)
             ret += a
-            del a
+
             if b:
                 del b
                 continue
+
             if i['name'] == "if":
                 ret += parseif(i, userid, username, targetid, targetname)
+
         return ret
     except ParsingError as e:
         return e.message
+
     except:
         import traceback
         et, v, tb = sys.exc_info()
         with open(os.path.join(os.path.dirname(__file__), "logs.txt"), "a") as f:
             traceback.print_exception(et, v, tb, file=f)
             f.write("\n")
+
         return ret
 
 def parse_arg_parameters(string, msg):
@@ -229,6 +260,7 @@ def parse_arg_parameters(string, msg):
         else:
             string = string.replace("$pos"+str(index), v.get_quoted_word())
             v.skip_ws()
+
     return string
 
 def parsemath(arg):
@@ -242,25 +274,22 @@ def parsemath(arg):
     else:
         return str(v)
 
+_modes = {
+    ("==", "equals", "is"): lambda var, comp: var == comp,
+    ("!=", "notequals", "not"): lambda var, comp: var != comp,
+    (">", "greater"): lambda var, comp: intconverter(var) > intconverter(comp),
+    ("<", "smaller"): lambda var, comp: intconverter(var) < intconverter(comp),
+    ("<=", "seq"): lambda var, comp: intconverter(var) <= intconverter(comp),
+    (">=", "geq"): lambda var, comp: intconverter(var) >= intconverter(comp),
+    ("in", "=*"): lambda var, comp: var in comp,
+    ("notin", "!*"): lambda var, comp: var not in comp,
+    ("permission", "has_permission"): lambda var, comp: Parent.HasPermission(var.lower(), comp, "")
+}
+
 def parse_modes(var, mode, compare):
-    if mode in ['==', "equals", "is"]:
-        return var == compare
-    if mode in ['!=', "not"]:
-        return var != compare
-    if mode in ['>', "greater"]:
-        return intconverter(var) > intconverter(compare)
-    if mode in ['<', 'smaller']:
-        return intconverter(var) < intconverter(compare)
-    if mode in ['<=', 'seq']:
-        return intconverter(var) >= intconverter(compare)
-    if mode in ['>=', 'geq']:
-        return intconverter(var) <= intconverter(compare)
-    if mode in ['in', '=*']:
-        return var in compare
-    if mode in ['notin', '!*']:
-        return var not in compare
-    if mode in ['permission', "haspermission"]:
-        return Parent.HasPermission(var, compare, "")
+    for x,y in _modes.items():
+        if mode in x:
+            return y(var, compare)
 
 def parseif(args, user, username, targetuser, targetname):
     ret = ""
@@ -268,33 +297,41 @@ def parseif(args, user, username, targetuser, targetname):
         var, mode, compare, true_msg, false_msg = args['params']
     except:
         return "Not enough values passed to $if"
+
     tf = parse_modes(var, mode, compare)
     called_msg = true_msg if tf else false_msg
     ifargs = argparser.parse(called_msg, 1)
+
     for index, i in enumerate(ifargs):
         if not isinstance(i, dict):
             ret += i
             continue
+
         v = controller.evaluate(i)
         if isinstance(v, str):
             ret += v
             continue
+
         a,b = parse_variables(i)
         ret += a
         if b:
-            del a,b
             continue
+
         if i['name'] == "if":
             ret += parseif(i, user, username, targetuser, targetname)
+
         if i['name'] in ["add", "remove"]:
             ret += parse_currency(i)
+
         if i['name'] == "getapi":
             response = json.loads(i['params'][0])
             if response['status'] != 200: # api error
                 ret += response['error']
                 continue
+
             ret += response['response']
             continue
+
         if i['name'] == "write":
             ret += writefile(i)
         if i['name'] == "mathif":
@@ -310,15 +347,19 @@ def parse_currency(arg):
     userid, amount = arg['params'][0:2] # required parameters
     try:
         success, failed = arg['params'][2:4] # optional parameters
-    except: pass
+    except:
+        pass
+
     amount = intconverter(amount)
 
     if arg['name'] == "add":
         if Parent.AddPoints(userid, Parent.GetDisplayName(userid), amount):
             return success
+
         return failed
 
     elif arg['name'] == "remove":
         if Parent.RemovePoints(userid, Parent.GetDisplayName(userid), amount):
             return success
+
         return failed

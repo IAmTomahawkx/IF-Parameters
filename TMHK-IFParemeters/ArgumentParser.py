@@ -115,6 +115,9 @@ class Adapter(object):
                 params[-1]['params'][-1] = params[-1]['params'][-1].strip() # first, remove any lingering whitespace from the current argument
                 params[-1]['params'].append("") # create a new argument.
                 continue
+
+            elif char in self.delimiters and bracketlvl <= 1 and buffer[index-1] == "\\":
+                params[-1]['params'] = params[-1]['params'][0:-1]
             
             #if i've hit this point, that means there is nothing special about the character, so add it to the current argument
             if isinstance(params[-1], dict):
