@@ -4,7 +4,8 @@ If Parameters
 </h1>
 <p align="center">
 <sub>
-By IAmTomahawkx<br>Version 2.2.0
+By IAmTomahawkx<br>Version 2.2.0<br>
+Install: <a href="https://github.com/IAmTomahawkx/IF-Parameters/releases/download/V2.2.0/TMHK-IFParemeters.zip">TMHK-IFParameters.zip</a>
 </sub>
 </p>
 
