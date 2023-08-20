@@ -4,7 +4,7 @@ If Parameters
 </h1>
 <p align="center">
 <sub>
-By IAmTomahawkx<br>Version 2.1.0
+By IAmTomahawkx<br>Version 2.2.0
 </sub>
 </p>
 
