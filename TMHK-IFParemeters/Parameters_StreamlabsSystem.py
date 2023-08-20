@@ -48,8 +48,8 @@ varfile = os.path.join(filedata, "vars.json")
 
 variables = {}
 last_save_time = time.time()
-argparser = ArgumentParser.Adapter() # create my argparser instance.
-controller = None # i will set this once we have the Parent at our disposal.
+argparser = ArgumentParser.Adapter(ArgumentParser.JSONAdapter()) # create my argparser instance.
+controller = None # type: scenecontrol.Broadcastcontrol # i will set this once we have the Parent at our disposal.
 
 def send_message(message, data=None):
     """
@@ -240,6 +240,12 @@ def Parse(msg, userid, username, targetid, targetname, message):
             if i['name'] == "if":
                 ret += parseif(i, userid, username, targetid, targetname)
 
+            elif i['name'] == "parsejson":
+                ret += parse_json(i)
+
+            else:
+                ret += " " + i['raw'] # try to correct for stripped whitespace
+
         return ret
     except ParsingError as e:
         return e.message
@@ -251,7 +257,7 @@ def Parse(msg, userid, username, targetid, targetname, message):
             traceback.print_exception(et, v, tb, file=f)
             f.write("\n")
 
-        return ret
+        return ret or (msg + " <A fatal error occurred in the IF script. Please send the log file to the script developer>")
 
 def parse_arg_parameters(string, msg):
     v = view.StringView(msg)
@@ -322,10 +328,10 @@ def parseif(args, user, username, targetuser, targetname):
         if i['name'] == "if":
             ret += parseif(i, user, username, targetuser, targetname)
 
-        if i['name'] in ["add", "remove"]:
+        elif i['name'] in ["add", "remove"]:
             ret += parse_currency(i)
 
-        if i['name'] == "getapi":
+        elif i['name'] == "getapi":
             response = json.loads(i['params'][0])
             if response['status'] != 200: # api error
                 ret += response['error']
@@ -334,16 +340,106 @@ def parseif(args, user, username, targetuser, targetname):
             ret += response['response']
             continue
 
-        if i['name'] == "write":
+        elif i['name'] == "write":
             ret += writefile(i)
 
-        if i['name'] == "mathif":
+        elif i['name'] == "mathif":
             ret += parsemath(i)
 
-        if i['name'] == "balance":
+        elif i['name'] == "balance":
             ret += parse_balance(i)
 
+        elif i['name'] == "parsejson":
+            ret += parse_json(i)
+
+        else:
+            ret += " " + i["raw"]
+
     return ret.strip()
+
+def _assemble_anchor_error(where, err):
+    position = "#" + ".".join(where)
+    return "{{failed to parse json @ {pos} : {err}}}".format(pos=position, err=err)
+
+
+def _parse_item_anchor(data, anchors, where): # type: (dict[str, str | int | dict | list] | list, list[str], list[str]) -> int | str | bool | list | dict
+    attr = anchors.pop()
+
+    if isinstance(data, list):
+        if not attr.isdigit() and attr != "!r":
+            return _assemble_anchor_error(where, "Attempted to access '{attr}' on an array".format(attr=attr))
+
+        elif attr == "!r":
+            digit = random.randint(0, len(data) - 1)
+            _where = "{}!r".format(digit)
+
+        else:
+            digit = int(attr)
+            _where = str(digit)
+
+        nxt = data[digit]
+        where.append(_where)
+
+        if anchors:
+            if isinstance(nxt, (str, int, bool)):
+                return _assemble_anchor_error(where, "There are still anchors to be parsed, but this item is not anchorable")
+
+            return _parse_item_anchor(nxt, anchors, where)
+
+        else:
+            return nxt # type: ignore
+
+    else:
+        where.append(attr)
+        try:
+            nxt = data[attr]
+        except KeyError:
+            return _assemble_anchor_error(where, "Item does not exist")
+
+        else:
+            if anchors:
+                if isinstance(nxt, (str, int, bool)):
+                    return _assemble_anchor_error(where, "There are still anchors to be parsed, but this item is not anchorable")
+
+                return _parse_item_anchor(nxt, anchors, where)
+
+            else:
+                return nxt  # type: ignore
+
+def parse_json(arg):
+    if 0 >= len(arg["params"]) > 1:
+        return "{{$parsejson takes 1 argument, not {0}}}".format(len(arg["params"]))
+
+    if not arg["post_anchor"]:
+        return "{$parsejson expects an anchor, please read the docs}"
+
+    processed_anchor = argparser.json.parse_anchor(arg["post_anchor"])
+    processed_anchor.reverse() # process them working down the chain
+
+    fp = arg["params"][0]
+
+    try:
+        fp = os.path.abspath(fp)
+        t = time.time()
+
+        with open(fp) as f:
+            data = json.load(f) # hopefully no one throws a fuckoff massive json file at this
+
+        post = time.time() - t
+        if post > 3: # they threw a fuckoff massive json file at it
+            Parent.Log(ScriptName, "WARN: JSON processing of {0} took {1} seconds to complete, this WILL affect bot performance".format(fp, post))
+
+    except (OSError, WindowsError):
+        return "{{Could not open {0}}}".format(fp)
+    except ValueError as e:
+        return "{{Could not parse the JSON file: {0}}}".format(e.message)
+    except Exception as e:
+        Parent.Log(ScriptName, str((e, type(e))))
+        return "{{Something went wrong while processing {0}}}".format(fp)
+
+    attr = _parse_item_anchor(data, processed_anchor, [])
+    return str(attr)
+
 
 def parse_balance(arg):
     if len(arg['params']) != 1:

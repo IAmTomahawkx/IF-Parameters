@@ -13,16 +13,11 @@ ___
 
 ## What's new?
 See the [full changelog](#changelog). \
-It's been awhile since I last worked on this script, and it's time for some updates! In this version, I've moved the
-readme online, as you can tell, and done a few other things.
-- Fixed geq `>=` and seq `<=` being treated backwards (thanks to lance lake for pointing this out)
-- Added a new comparison, `indir`, which will allow you to check if a file exists in a certain directory
-- Fixed backslashes (`\`) being displayed when used to escape commas
-- Added $balance() inside the if response
+This update adds in JSON parsing abilities.
 
 ___
 Heads up when reading this readme!
-Square brackets inside a parameter mark optional arguments. Ex. `$OBSSwapScene(scene[,delay])`. Do not actually write the brackets!
+Square brackets inside a parameter mark optional arguments. Ex. `$OBSSwapScene(scene[,delay])`. Do not actually write the square brackets!
 
 ## Custom Variables
 One of the things ive always found the chatbot is lacking is ways to store your own variables without having to use \
@@ -86,15 +81,16 @@ haspermission - returns true if the comparee (which must be $userid or equivalen
 - Editor
 
 ## Other Parameters
-the following are parameters (including obs/slobs) that can go inside the true-msg and false-msg, and will be run with if. \
-- $setvar (see above) \
-- $if (yes, they can go inside other ifs)\
-- $add(userid,amount) OR $add(userid,amount,succeed,fail) - adds points to the target user\
-- $remove(userid,amount) OR $remove(userid,amount,succeed,fail) - removes points from the user\
-- $getapi(url)\
-- $write(filepath,content) OR $write(filepath,content,succeed,fail)\
+the following are parameters (including obs/slobs) that can go inside the true-msg and false-msg, and will be run with if.
+- $setvar (see above) 
+- $if (yes, they can go inside other ifs)
+- $add(userid,amount) OR $add(userid,amount,succeed,fail) - adds points to the target user
+- $remove(userid,amount) OR $remove(userid,amount,succeed,fail) - removes points from the user
+- $getapi(url)
+- $write(filepath,content) OR $write(filepath,content,succeed,fail)
 - $mathif(equation)
 - $balance(user) - returns info on the specified user
+- $parsejson(filepath)#anchor - See [JSON Parsing](#JSON Parsing)
 
 ## OBS & SLOBS parameters
 - $OBSSwapScene(scene[,delay])\
@@ -109,15 +105,61 @@ the following are parameters (including obs/slobs) that can go inside the true-m
 - $SLOBSFolderVisibility(folder,on/off[,scene])\
 - $SLOBSTimedFolderVisibility(folder,on/off,delay[,scene])
 
+## JSON Parsing
+As of V2.2.0, this script now features $parsejson, which allows you to pull JSON data from a file, and grab a specific key from it.
+This is a rather advanced feature, and if you don't know what this is, feel free to skip this section.
+To use this, simply use the $parsejson parameter, and provide it with a filepath to a JSON file.
+Afterwards, use an anchor to specify where in the json file to go.
+
+### Anchors
+Anchors are simply another way to provide arguments to the parsejson parameter. an anchor would look like this:
+```
+$parsejson(myfile.json)#abc
+```
+where `#abc` is the anchor. This allows you to navigate the JSON file in a chainable way, eg:
+```
+$parsejson(myfile.json)#abc.def
+```
+That way, when you have nested json, like this:
+```json
+{
+  "abc": {
+    "def": "ghi",
+    "jkl": [
+      "mno",
+      "pqr"
+    ]
+  }
+}
+```
+You can navigate anywhere in the file, as deep as you need to go.
+
+You can also navigate through arrays using numbers:
+```
+$parsejson(myfile.json)#abc.jkl.0
+```
+Or you can pick a random item in the array using `!r`:
+```
+$parsejson(myfile.json)#abc.jkl.!r
+```
+
 ___
 ## Contact
 having problems? have questions? ideas/requests? head over to my [discord](https://discord.gg/VKp6zrs) \
 I am well aware that I'm terrible at explaining things. if this readme was no help whatsoever,
 feel free to jump into my discord server to ask!
+You can also DM me on discord: @iamtomahawkx
 
 ___
 
 # Changelog
+2.2.0:
+- Added JSON parsing ability
+  - Use $parsejson for this, along with an [anchor tag](#anchors)
+- Fixed a bug where the parser got too eager on argument delimiters
+- Fixed a bug where the parser would sometimes remove whitespace
+- Fixed a bug where the parser would remove unknown $parameters
+
 2.1.0:
 - Fixed geq `>=` and seq `<=` being treated backwards (thanks to lance lake for pointing this out)
 - Added a new comparison, `indir`, which will allow you to check if a file exists in a certain directory

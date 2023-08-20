@@ -43,16 +43,17 @@ class Broadcastcontrol(object):
                 self.delays.remove(i)
     
     def obs_scene_swap(self, scene, delay=None):
-        print(scene)
         if delay:
+            delay = intconverter(delay)
             self.delays.append({'time': time.time()+delay, 'action': self.remote.SetOBSCurrentScene, "args": (scene, self.obs_logger)})
             return
         self.remote.SetOBSCurrentScene(scene, self.obs_logger)
         return ""
     
-    def obs_scene_swap_back(self, delay, scene_1, scene_2):
+    def obs_scene_swap_back(self, scene_1, scene_2, delay):
+        delay = intconverter(delay)
         self.remote.SetOBSCurrentScene(scene_1)
-        self.delays.append({"time":time.time()+delay, "action": self.remote.SetObsCurrentScene, "args": (scene_2, self.obs_logger)})
+        self.delays.append({"time":time.time()+delay, "action": self.remote.SetOBSCurrentScene, "args": (scene_2, self.obs_logger)})
         return ""
     
     def obs_source_visibility(self, source, onoff, scene=None):
@@ -67,7 +68,8 @@ class Broadcastcontrol(object):
         else:
             return "{{obs error: invalid mode: '{0}'}}".format(mode)
         self.remote.SetOBSSourceRender(source, a, scene, self.obs_logger)
-        self.delays.append({"time":time.time()+delay, "action": self.remote.SetOBSSourceRender, "args": (source, b, scene)})
+        delay = intconverter(delay)
+        self.delays.append({"time":time.time()+delay, "action": self.remote.SetOBSSourceRender, "args": (source, b, scene, self.obs_logger)})
     
     def slobslogger(self, response):
         if response:
@@ -131,3 +133,14 @@ class Broadcastcontrol(object):
         def coro():
             self.slobslogger(os.popen("{0} {1}".format(BridgeApp, command)).read())
         self.threadedexecution(coro)
+
+from view import ParsingError
+
+def intconverter(string):
+    """
+    helper to convert data into an integer.
+    """
+    try:
+        return int(round(float(string.strip())))
+    except:
+        raise ParsingError("error while converting '{0}' to an integer".format(string))
